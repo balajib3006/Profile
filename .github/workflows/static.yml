@@ -1,44 +1,22 @@
 name: Deploy to GitHub Pages
-
 on:
   push:
-    branches: ["main"]
-  workflow_dispatch:
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
+    branches: [ main ]
 
 jobs:
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up deployment
-        uses: actions/configure-pages@v5
-
-      - name: Copy assets to public folder (if needed)
+      - uses: actions/checkout@v4
+      
+      # Create symlink from public/assets/ to src/assets/
+      - name: Create assets symlink
         run: |
-          mkdir -p public
-          cp -r src/assets public/assets || true
-          cp *.html public/ || true
-          cp *.css public/ || true
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+          mkdir -p public/assets
+          ln -s $(pwd)/src/assets/contact.vcf public/assets/contact.vcf
+          
+      # Deploy public/ folder to GitHub Pages
+      - uses: peaceiris/actions-gh-pages@v3
         with:
-          path: 'public'  # Deploy only the public folder
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
